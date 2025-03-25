@@ -1,0 +1,143 @@
+//problema quantos teletransportes usar para chegar de a ate b
+
+#include <bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+#define int ll
+
+void dbg_out() { cerr << endl; }
+template<typename Head, typename... Tail> void dbg_out(Head H, Tail... T){ cerr << ' ' << H; dbg_out(T...); }
+#define dbg(...) cerr<<"(" << #__VA_ARGS__<<"):" , dbg_out(__VA_ARGS__) , cerr << endl
+
+const int N = 2e5 + 10;
+
+int tele[N][20];
+int id_arvore[N], id_componente[N], depth[N];
+int size_ciclo[N], pos_ciclo[N];
+vector<int> adj[N];
+
+void build_graph(int n) {
+    vector<int> grau_in(n);
+    for (int i = 0; i < n; i++) {
+        grau_in[tele[i][0]]++;
+    }
+
+    queue<int> q;
+    for (int i = 0; i < n; i++) if (grau_in[i] == 0) q.push(i);
+
+    while (q.size()) {
+        int u = q.front(); q.pop();
+
+        // iterar pelos adjacentes (somente o pai)
+        int p_u = tele[u][0];
+        grau_in[p_u]--;
+
+        adj[p_u].push_back(u);
+
+        if (grau_in[p_u] == 0) {
+            q.push(p_u);
+        }
+    }
+
+    function<void(int, int, int)> dfs = [&] (int x, int cur_id_arvore, int cur_id_componente) {
+        id_arvore[x] = cur_id_arvore;
+        if(x!=cur_id_arvore) depth[x] = depth[tele[x][0]] + 1;
+        id_componente[x] = cur_id_componente;
+        for (auto u : adj[x])
+            dfs(u, cur_id_arvore, cur_id_componente);
+    };
+
+    int cur_id_componente = 0;
+    vector<int> vis(n);
+
+    for (int i = 0; i < n; i++) if (vis[i] == 0 && grau_in[i] > 0) {
+        // achamos um ciclo
+        int x = i;
+        vector<int> ciclo;
+        int ciclo_sz = 0;
+        while (vis[x] == 0) {
+            ciclo.push_back(x);
+            vis[x]++;
+            x = tele[x][0];
+        }
+
+        for (int j = 0; j < ciclo.size(); j++) {
+            int u = ciclo[j];
+            pos_ciclo[u] = j;
+            size_ciclo[u] = ciclo.size();
+            dfs(u, u, cur_id_componente);
+        }
+        cur_id_componente++;
+    }
+}
+
+// Funcoes LCA
+
+int sobe(int x, int jump_size) {
+    for (int i = 0; i < 20; i++) if (jump_size >> i & 1) 
+        x = tele[x][i];
+    return x;
+}
+
+bool is_anc (int x, int y) {
+    // retorna se x eh ancestral de y
+    if (depth[x] > depth[y]) return false;
+
+    int anc_y = sobe(y, depth[y] - depth[x]);
+    return anc_y == x;
+}
+
+void solve(){
+    int n, q; cin >> n >> q;
+    for (int i = 0; i < n; i++) {
+        int x; cin >> x; x--;
+        tele[i][0] = x;
+    }
+
+    for (int i = 1; i < 20; i++) {
+        for (int u = 0; u < n; u++) {
+            int p_u = tele[u][i - 1];
+            tele[u][i] = tele[p_u][i - 1];
+        }
+    }
+    build_graph(n);
+
+    for (int i = 0; i < q; i++) {
+        int u, v; cin >> u >> v;
+        u--; v--;
+
+        if (id_componente[u] != id_componente[v]) {
+            cout << "-1\n";
+            continue;
+        }
+        if (id_arvore[u] == id_arvore[v]) {
+            // acha o LCA
+            if (is_anc(v, u)) {
+                cout << depth[u] - depth[v] << "\n";
+            }
+            else cout << "-1\n";
+        }
+        else {
+            // se o ponto de destino nao ta no ciclo
+            if (id_arvore[v] != v) {
+                cout << "-1\n";
+                continue;
+            }
+            int ans = depth[u];
+            u = id_arvore[u];
+
+            // quermeos achar a distancia, no ciclo, de u para v
+            int dist = pos_ciclo[v] - pos_ciclo[u];
+            if (dist < 0) dist += size_ciclo[u];
+            
+            cout << ans + dist << "\n";
+        }
+    }
+}
+
+signed main(){
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+    solve();
+}
