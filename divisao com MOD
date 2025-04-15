@@ -1,0 +1,131 @@
+There is a tree with 
+N
+N vertices, numbered 
+1
+,
+2
+,
+…
+,
+N
+1,2,…,N. For each 
+i
+i (
+1
+≤
+i
+≤
+N
+−
+1
+1≤i≤N−1), the 
+i
+i-th edge connects Vertex 
+x
+i
+x 
+i
+​
+  and 
+y
+i
+y 
+i
+​
+ .
+
+Taro has decided to paint each vertex in white or black, so that any black vertex can be reached from any other black vertex by passing through only black vertices.
+
+You are given a positive integer 
+M
+M. For each 
+v
+v (
+1
+≤
+v
+≤
+N
+1≤v≤N), answer the following question:
+
+Assuming that Vertex 
+v
+v has to be black, find the number of ways in which the vertices can be painted, modulo 
+M
+M.
+
+
+//para substituir a divisao por modulo temos que fazer o sufixo e prefixo
+#include <bits/stdc++.h>
+using namespace std;
+#define int long long
+
+void dbg_out() { cerr << endl; }
+template<typename Head, typename... Tail> void dbg_out(Head H, Tail... T){ cerr << ' ' << H; dbg_out(T...); }
+#define dbg(...) cerr<<"(" << #__VA_ARGS__<<"):" , dbg_out(__VA_ARGS__) , cerr << endl
+
+int n, MOD;
+vector<vector<int>> tree;
+vector<int> dp, parent, resp;
+
+void dfs(int atual, int pai) {
+    dp[atual] = 1;
+    parent[atual] = pai;
+    for (int filho : tree[atual]) {
+        if (filho == pai) continue;
+        dfs(filho, atual);
+        dp[atual] = (dp[atual] * (dp[filho] + 1)) % MOD;
+    }
+}
+
+void volta(int atual, int pai, int val) {
+    //na raiz a resposta e a dp
+    resp[atual] = (dp[atual] * (val + 1)) % MOD;
+    vector<int> children;
+    for (int filho : tree[atual]) {
+        if (filho != pai) children.push_back(filho);
+    }
+    int m = children.size();
+    //prefixo sera a multiplicacao dos filhos antes de i
+    //sufixo mulyiplicacao dos filhos depois do i
+    vector<int> prefix(m + 1, 1), suffix(m + 1, 1);
+    for (int i = 0; i < m; ++i) {
+        prefix[i + 1] = (prefix[i] * (dp[children[i]] + 1)) % MOD;
+    }
+    for (int i = m - 1; i >= 0; --i) {
+        suffix[i] = (suffix[i + 1] * (dp[children[i]] + 1)) % MOD;
+    }
+    for (int i = 0; i < m; ++i) {
+        int filho = children[i];
+        int new_val = (prefix[i] * suffix[i + 1]) % MOD;
+        new_val = (new_val * (val + 1)) % MOD;
+        volta(filho, atual, new_val);
+        //tudo isso porque divisao com modulo da errado...
+    }
+}
+
+void solve() {
+    cin >> n >> MOD;
+    tree.assign(n + 1, vector<int>());
+    for (int i = 1; i < n; ++i) {
+        int x, y;
+        cin >> x >> y;
+        tree[x].push_back(y);
+        tree[y].push_back(x);
+    }
+    dp.resize(n + 1);
+    parent.resize(n + 1, -1);
+    resp.resize(n + 1);
+    dfs(1, -1);
+    volta(1, -1, 0);
+    for (int i = 1; i <= n; ++i) {
+        cout << resp[i] << '\n';
+    }
+}
+
+signed main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+    solve();
+    return 0;
+}
