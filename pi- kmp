@@ -1,0 +1,73 @@
+//Your task is, for any prefix of string s which matches a suffix of string s, print the number of times it occurs in string s as a substring.
+//usei apenas o vetor pi
+#include <bits/stdc++.h>
+using namespace std;
+#define int long long
+
+void dbg_out() { cerr << endl; }
+template<typename Head, typename... Tail> void dbg_out(Head H, Tail... T){ cerr << ' ' << H; dbg_out(T...); }
+#define dbg(...) cerr<<"(" << #__VA_ARGS__<<"):" , dbg_out(__VA_ARGS__) , cerr << endl
+
+
+template <typename T> vector<int> kmp(int sz, const T s[]) {
+	vector<int> pi(sz);
+	for(int i=1;i<sz;i++) {
+		int &j = pi[i];
+		for(j=pi[i-1];j>0 && s[i]!=s[j];j=pi[j-1]);
+		    if(s[i] == s[j]) j++;
+	}
+	return pi;
+};
+
+template<typename T> vector<int> matching(T& s, T& t) {
+	vector<int> p = kmp(s.size(), s.c_str()), match;
+	for (int i = 0, j = 0; i < t.size(); i++) {
+		while (j and s[j] != t[i]) j = p[j-1];
+		if (s[j] == t[i]) j++;
+		if (j == s.size()) match.push_back(i-j+1), j = p[j-1];
+	}
+	return match;
+}
+
+
+
+void solve(){
+	string s;
+    cin>>s;
+	vector<int>pi = kmp(s.size(),s.c_str());//passar s para array
+	int tam=pi[s.size()-1];
+	int sup=1;
+    vector<pair<int,int>>resp;
+    resp.push_back({s.size(),1});
+    vector<int> freq(s.size() + 1, 0);
+    int n=s.size();
+
+    for (int i = 0; i < n; i++)
+        freq[pi[i]]++;
+    
+    for (int i = n - 1; i > 0; i--)
+        freq[pi[i - 1]] += freq[i];
+
+    for (int i = 0; i <= n; i++) freq[i]++;
+
+    while(tam>0){
+        // string prefix = s.substr(0, tam);
+        // vector<int>posicoes = matching(prefix,s);
+        resp.push_back({tam,freq[tam]});
+
+        tam=pi[tam-1];
+
+    }
+    cout<<resp.size()<<endl;
+
+    for(auto it=resp.rbegin();it!=resp.rend();it++){
+        auto par=*it;
+        cout<<par.first<<" "<<par.second<<endl;
+    }
+
+}
+
+signed main(){
+    ios::sync_with_stdio(0);cin.tie(0);
+	solve();   
+}
