@@ -1,0 +1,84 @@
+//A period of a string is a prefix that can be used to generate the whole string by repeating the prefix. The last repetition may be partial. For example, the periods of abcabca are abc, abcabc and abcabca.
+//usei hash
+#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+#define int ll
+
+void dbg_out() { cerr << endl; }
+template <typename H, typename... T>
+void dbg_out(H h, T... t) { cerr << ' ' << h; dbg_out(t...); }
+#define dbg(...) { cerr << #__VA_ARGS__ << ':'; dbg_out(__VA_ARGS__); }
+
+//template tirado do caderno do mori
+const long long mod1 = 1000015553, mod2 = 1000028537;
+
+mt19937 rng((int) chrono::steady_clock::now().time_since_epoch().count()); // random number generator
+
+int uniform(int l, int r) {
+    uniform_int_distribution<int> uid(l, r);
+    return uid(rng);
+}
+
+template<int MOD> 
+struct str_hash {
+    static int P;
+    vector<ll> h, p;
+    str_hash () {}
+    str_hash(string s) : h(s.size()), p(s.size()) {
+        p[0] = 1, h[0] = s[0];
+        for (int i = 1; i < s.size(); i++)
+            p[i] = p[i - 1]*P%MOD, h[i] = (h[i - 1]*P + s[i])%MOD;
+    }
+    ll operator()(int l, int r) { // retorna hash s[l...r]
+        ll hash = h[r] - (l ? h[l - 1]*p[r - l + 1]%MOD : 0);
+        return hash < 0 ? hash + MOD : hash;
+    }
+};
+template<int MOD> int str_hash<MOD>::P = uniform(256, MOD - 1); // l > |sigma|
+
+struct Hash {
+    // Uses 2 primes to better avoid colisions
+    str_hash<mod1> H1;
+    str_hash<mod2> H2;
+ 
+    Hash (string s) : H1(str_hash<mod1>(s)), H2(str_hash<mod2>(s)) {}
+ 
+    ll operator()(int l, int r) {
+        ll ret1 = H1(l, r), ret2 = H2(l, r);
+        return (ret1 << 30) ^ (ret2);
+    }
+};
+
+
+void solve () {
+	string s; cin>>s;
+	Hash hash1(s);
+	int n=s.size();
+	for(int i=1;i<s.size();i++){
+		bool sim=true;
+		ll compara = hash1(0,i-1);
+		for(int j=i;j<s.size();j+=i){
+			if(j+i-1>n-1){
+				compara=hash1(0,n-j-1);
+				if(compara!=hash1(j,n-1)){
+					sim=false;
+					break;
+				}
+			}
+			else if(compara!=hash1(j,j+i-1)){
+				// dbg(i,j);
+				sim=false;
+				break;
+			}
+		}
+		if(sim){
+			cout<<i<<" ";
+		}
+	}
+	cout<<s.size()<<endl;
+}
+
+signed main() {
+	solve();
+}
