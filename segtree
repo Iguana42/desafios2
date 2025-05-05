@@ -65,57 +65,41 @@ void solve(){
     for(int i=0;i<n;i++){
         cin>>hotel[i];
     }
-    // for(int i=0;i<m;i++){
-    //     cin>>grupo[i];
-    // }
     SegTree st(n);
     //construir a segtree
     for(int i = 0; i<n;i++){
         st.update(i,hotel[i]);
     }
-    // dbg("passou1");
     for(int i=0;i<m;i++){
         //primeiro consulta
         int x;cin>>x;
-        // dbg(x);
-        // dbg("passou2");
         int sup=st.query(0,n-1);//total
         int lo=0;
         int hi=n-1;
         int sup2=sup;
-        // int resp=sup;
-        // dbg(st.query(2,1),"////");
 
         while(hi>lo){
-            // dbg("passou3", x, sup, sup2, hi,lo);
+            
             int mid=(hi-lo)/2+lo;
-            // dbg(lo,hi,mid,sup,"antes");
+           
             sup2=st.query(lo,mid);
-            // else sup2=st.query(lo,lo)
+            
             if(sup2<x){
-                // if((hi-lo)/2==0)lo=(hi-lo)/2+lo+1;
-                // else lo=(hi-lo)/2+lo;
+           
                 lo=mid+1;
                 sup2=st.query(mid,hi);
             }
             else{
                 hi=mid;
-                // sup=sup2;
             } 
             if(sup2>=x)sup=sup2;
-            // dbg(lo,hi,mid,sup);
         }
-        // dbg("lower_bound",sup,lo);
         if(sup>=x){
             cout<<lo+1<<endl;
-            // dbg(st.query(lo,lo),"...");
             st.update(lo,-x);
-            // dbg(st.query(lo,lo));
         }
         else cout<<0<<endl;
-        // for(int i=0;i<n;i++){
-        //     cout<<st.query(i,i)<<" ";
-        // }
+
 
         
     }
