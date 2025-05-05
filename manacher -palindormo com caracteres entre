@@ -1,0 +1,75 @@
+//aabaa e um 3-palindormo pois sua metade direita e esquerda sao 2-palindromo
+//achar a soma de cada k dos k-palindormos que sao prefixo
+#include <bits/stdc++.h>
+using namespace std;
+#define int long long
+
+void dbg_out() { cerr << endl; }
+template <typename H, typename... T>
+void dbg_out(H h, T... t) { cerr << ' ' << h; dbg_out(t...); }
+#define dbg(...) { cerr << #__VA_ARGS__ << ':'; dbg_out(__VA_ARGS__); }
+
+//template manacher
+vector<int> manacher_odd(vector<char> sup) {
+    int n = sup.size()-2;
+    vector<int> p(n + 2);
+    int l = 0, r = 1;
+    for(int i = 1; i <= n; i++) {
+        p[i] = max((long long) 0, min(r - i, p[l + (r - i)]));
+        while(sup[i - p[i]] == sup[i + p[i]]) {
+            p[i]++;
+        }
+        if(i + p[i] > r) {
+            l = i - p[i], r = i + p[i];
+        }
+    }
+    return vector<int>(begin(p) + 1, end(p) - 1);
+}
+
+vector<int> manacher(string s) {
+    // string t;
+    vector<char>t;
+	t.push_back('$');
+    for(auto c: s) {
+        t.push_back( '#');
+        t.push_back(c);
+    }
+    t.push_back('#');
+	t.push_back('^');
+    auto res = manacher_odd(t);
+    return res;
+}
+
+bool pal[(int)5e6+10];
+int n;
+
+void solve () {
+	string s;
+	cin>>s;
+	vector<int> m = manacher(s);
+	int n = m.size();
+	int soma=0;
+	vector<int> degree(n, 0);
+	// for(auto ele:m){
+	// 	cout<<ele<<endl;
+	// }
+	for(int i=0;i<n;i++){
+		if(m[i]>1 and m[i] >=i+1){
+			//e um prefixo
+            // dbg(i,m[i]);
+			degree[i] = degree[i/2] + 1;
+            // dbg((i+1)/2-1,degree[(i+1)/2-1],degree[i]);
+		} 
+        soma+=degree[i];
+	}
+    cout<<soma<<endl;
+
+
+
+}
+
+signed main() {
+	ios_base::sync_with_stdio(false);
+    cin.tie(0);
+	solve();
+}
