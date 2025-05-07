@@ -1,0 +1,175 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define int long long
+// #define endl '\n'
+// #define MAXP 32 
+ 
+void dbg_out() { cerr << endl; }
+template<typename Head, typename... Tail> void dbg_out(Head H, Tail... T){ cerr << ' ' << H; dbg_out(T...); }
+#define dbg(...) cerr<<"(" << #__VA_ARGS__<<"):" , dbg_out(__VA_ARGS__) , cerr << endl
+
+const int MOD = 1000003;
+int A, B;
+int n;
+
+void solve(){
+    cin>>A>>B;
+    cin>>n;
+    vector<string> forbidden(n);
+    for (int i=0;i<n;i++) {
+        cin>>forbidden[i];
+    }
+
+    unordered_map<char, char> dig_para_letra = {
+        {'0', 'o'},
+        {'1', 'i'},
+        {'3', 'e'},
+        {'5', 's'},
+        {'7', 't'}
+    };
+
+    //trie
+    vector<unordered_map<char, int>> trie(1);
+    vector<int> fail(1, 0);
+    vector<bool> end_node(1, false);
+    int node_id = 1;
+
+    for (const string& word : forbidden) {
+        int current = 0;
+        for (char c : word) {
+            if (trie[current].find(c) == trie[current].end()) {
+                trie[current][c] = node_id++;
+                trie.emplace_back();
+                fail.push_back(0);
+                end_node.push_back(false);
+            }
+            current = trie[current][c];
+        }
+        end_node[current] = true;
+    }
+
+    // Build failure links
+    queue<int> q;
+    for (const auto& pair : trie[0]) {
+        int child = pair.second;
+        fail[child] = 0;
+        q.push(child);
+    }
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        for (const auto& pair : trie[u]) {
+            char c = pair.first;
+            int v = pair.second;
+            int f = fail[u];
+            while (f != 0 && trie[f].find(c) == trie[f].end()) {
+                f = fail[f];
+            }
+            if (trie[f].find(c) != trie[f].end()) {
+                fail[v] = trie[f][c];
+            } else {
+                fail[v] = 0;
+            }
+            end_node[v] = end_node[v] || end_node[fail[v]];
+            q.push(v);
+        }
+    }
+
+    // Precompute transitions
+    vector<unordered_map<char, int>> transitions(node_id);
+    for (int u = 0; u < node_id; ++u) {
+        for (char c = 'a'; c <= 'z'; ++c) {
+            int v = u;
+            while (v != 0 && trie[v].find(c) == trie[v].end()) {
+                v = fail[v];
+            }
+            if (trie[v].find(c) != trie[v].end()) {
+                transitions[u][c] = trie[v][c];
+            } else {
+                transitions[u][c] = 0;
+            }
+        }
+        for (const auto& pair : dig_para_letra) {
+            char d = pair.first;
+            char c = pair.second;
+            int v = u;
+            while (v != 0 && trie[v].find(c) == trie[v].end()) {
+                v = fail[v];
+            }
+            if (trie[v].find(c) != trie[v].end()) {
+                transitions[u][d] = trie[v][c];
+            } else {
+                transitions[u][d] = 0;
+            }
+        }
+    }
+
+    // Initialize DP
+    vector<vector<vector<int>>> dp(2, vector<vector<int>>(node_id, vector<int>(8, 0)));
+    dp[0][0][0] = 1;
+    int ans = 0;
+
+    for (int length = 1; length <= B; ++length) {
+        int curr = length % 2;
+        int prev = 1 - curr;
+        for (int u = 0; u < node_id; ++u) {
+            for (int mask = 0; mask < 8; ++mask) {
+                dp[curr][u][mask] = 0;
+            }
+        }
+        for (int u = 0; u < node_id; ++u) {
+            for (int mask = 0; mask < 8; ++mask) {
+                if (dp[prev][u][mask] == 0) continue;
+                int count = dp[prev][u][mask];
+                // Add lowercase letter
+                for (char c = 'a'; c <= 'z'; ++c) {
+                    int new_u = transitions[u].count(c) ? transitions[u][c] : 0;
+                    int new_mask = mask | 0b001;
+                    if (!end_node[new_u]) {
+                        dp[curr][new_u][new_mask] = (dp[curr][new_u][new_mask] + count) % MOD;
+                    }
+                }
+                // Add uppercase letter (treated as lowercase)
+                for (char c = 'A'; c <= 'Z'; ++c) {
+                    char lower_c = tolower(c);
+                    int new_u = transitions[u].count(lower_c) ? transitions[u][lower_c] : 0;
+                    int new_mask = mask | 0b010;
+                    if (!end_node[new_u]) {
+                        dp[curr][new_u][new_mask] = (dp[curr][new_u][new_mask] + count) % MOD;
+                    }
+                }
+                // Add digit
+                for (char d = '0'; d <= '9'; ++d) {
+                    int new_u;
+                    if (dig_para_letra.count(d)) {
+                        char c = dig_para_letra[d];
+                        new_u = transitions[u].count(d) ? transitions[u][d] : 0;
+                    } else {
+                        new_u = 0;
+                    }
+                    int new_mask = mask | 0b100;
+                    if (!end_node[new_u]) {
+                        dp[curr][new_u][new_mask] = (dp[curr][new_u][new_mask] + count) % MOD;
+                    }
+                }
+            }
+        }
+        if (length >= A) {
+            for (int u = 0; u < node_id; ++u) {
+                if (!end_node[u]) {
+                    ans = (ans + dp[curr][u][0b111]) % MOD;
+                }
+            }
+        }
+    }
+
+    cout << ans << endl;
+}
+
+signed main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+    solve();
+    return 0;
+}
