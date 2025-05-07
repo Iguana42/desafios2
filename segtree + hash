@@ -1,0 +1,115 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define int long long
+#define endl '\n'
+// #define MAXP 32 
+ 
+void dbg_out() { cerr << endl; }
+template<typename Head, typename... Tail> void dbg_out(Head H, Tail... T){ cerr << ' ' << H; dbg_out(T...); }
+#define dbg(...) cerr<<"(" << #__VA_ARGS__<<"):" , dbg_out(__VA_ARGS__) , cerr << endl
+
+const int MAXN = 2e5 + 5;
+const int BASE = 911382629;
+const int MOD = 1e9 + 7;
+
+int n, m;
+string s;
+long long power[MAXN];
+
+struct Node {
+    long long hash_forward;
+    long long hash_backward;
+    int len;
+    Node() : hash_forward(0), hash_backward(0), len(0) {}
+    Node(long long hf, long long hb, int l) : hash_forward(hf), hash_backward(hb), len(l) {}
+};
+
+Node tree[4 * MAXN];
+
+Node combine(Node left, Node right) {
+    Node res;
+    res.len = left.len + right.len;
+    res.hash_forward = (left.hash_forward * power[right.len] + right.hash_forward) % MOD;
+    res.hash_backward = (right.hash_backward * power[left.len] + left.hash_backward) % MOD;
+    return res;
+}
+
+void build(int node, int start, int end) {
+    if (start == end) {
+        tree[node] = Node(s[start - 1], s[start - 1], 1);
+        return;
+    }
+    int mid = (start + end) / 2;
+    build(2 * node, start, mid);
+    build(2 * node + 1, mid + 1, end);
+    tree[node] = combine(tree[2 * node], tree[2 * node + 1]);
+}
+
+void update(int node, int start, int end, int pos, char val) {
+    if (start == end) {
+        tree[node] = Node(val, val, 1);
+        return;
+    }
+    int mid = (start + end) / 2;
+    if (pos <= mid) {
+        update(2 * node, start, mid, pos, val);
+    } else {
+        update(2 * node + 1, mid + 1, end, pos, val);
+    }
+    tree[node] = combine(tree[2 * node], tree[2 * node + 1]);
+}
+
+Node query(int node, int start, int end, int l, int r) {
+    if (r < start || end < l) {
+        return Node(0, 0, 0);
+    }
+    if (l <= start && end <= r) {
+        return tree[node];
+    }
+    int mid = (start + end) / 2;
+    Node left = query(2 * node, start, mid, l, r);
+    Node right = query(2 * node + 1, mid + 1, end, l, r);
+    return combine(left, right);
+}
+
+void solve(){
+    cin>>n>>m;
+    cin>>s;
+
+    //potencia
+    power[0]=1;
+    for(int i=1;i<=n;i++){
+        power[i]=(power[i-1]*BASE)%MOD;
+    }
+
+    build(1,1,n);
+
+    while(m--){
+        int type;
+        cin>>type;
+        if(type==1){
+            intk;
+            charx;
+            cin>>k>>x;
+            update(1,1,n,k,x);
+        }
+        else{
+            inta,b;
+            cin>>a>>b;
+            Noderes=query(1,1,n,a,b);
+            if(res.hash_forward==res.hash_backward){
+            cout<<"YES"<<endl;
+            }else{
+            cout<<"NO"<<endl;
+            }
+        }
+    }
+
+}
+
+signed main(){
+    ios_base::sync_with_stdio(false);
+    cin.tie(nullptr);
+    solve();
+    return 0;
+}
