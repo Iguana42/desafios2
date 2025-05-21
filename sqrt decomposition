@@ -1,0 +1,78 @@
+The Little Elephant loves playing with arrays. He has array a, consisting of n positive integers, indexed from 1 to n. Let's denote the number with index i as ai.
+
+Additionally the Little Elephant has m queries to the array, each query is characterised by a pair of integers lj and rj (1 ≤ lj ≤ rj ≤ n). For each query lj, rj the Little Elephant has to count, how many numbers x exist, such that number x occurs exactly x times among numbers alj, alj + 1, ..., arj.
+
+Help the Little Elephant to count the answers to all queries.
+
+#include <bits/stdc++.h>
+using namespace std;
+// #define int long long
+#define endl '\n'
+ 
+void dbg_out() { cerr << endl; }
+template<typename Head, typename... Tail> void dbg_out(Head H, Tail... T){ cerr << ' ' << H; dbg_out(T...); }
+#define dbg(...) cerr<<"(" << #__VA_ARGS__<<"):" , dbg_out(__VA_ARGS__) , cerr << endl
+
+vector<int>a;
+int n;
+unordered_map <int,int> freq;
+vector<int> candidatos;
+unordered_map<int, vector<int>> posicoes;
+
+void solve(){
+    cin >> n;
+    int m;
+    cin >> m;
+    a.resize(n + 1);
+    for(int i = 0; i < n; i++) {
+        cin >> a[i];
+        freq[a[i]]++;
+    }
+    for(auto it : freq) {
+        if(it.second >= it.first) {
+            candidatos.push_back(it.first);
+        }
+    }
+
+    //preprocessamento
+    for (int ele : candidatos) {
+        //para cada candidato, vamos guardar suas posicoes
+        posicoes[ele].reserve(freq[ele]);
+    }
+    for (int i = 0; i < n; ++i) {
+        int x = a[i];
+        if (freq[x] >= x) {
+            // se x é candidato, guardamos a posicao
+            posicoes[x].push_back(i);
+            // dbg(x, i, freq[x]);
+        }
+    }
+
+    for(int i = 0; i < m; i++) {
+        int l, r;
+        cin >> l >> r;
+        l--;
+        r--;
+        int res = 0;
+        for (int ele : candidatos) {
+            if (ele > r - l + 1){
+                //se o tamanho do intervalo é menor que o candidato
+                continue;
+            }
+            // mais eficiente que auto (auto->copia) (const auto& -> referencia)
+            const auto& pos = posicoes[ele];
+            // posicoes estao no intervalo e tem a quantidade que queremos
+            int contagem = upper_bound(pos.begin(), pos.end(), r) - lower_bound(pos.begin(), pos.end(), l);
+            if (contagem == ele) res++;
+        }
+        cout << res << endl;
+    }
+}
+
+signed main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+    cout.tie(0);
+    solve();
+    return 0;
+}
